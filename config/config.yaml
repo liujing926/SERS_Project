@@ -1,0 +1,28 @@
+data:
+  image_size: 224
+  batch_size: 32
+  num_workers: 4
+  train_ratio: 0.8
+
+model:
+  backbone: 'resnet18'
+  embedding_dim: 128
+  pretrained: true
+
+contrastive:
+  temperature: 0.1
+  epochs: 100
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+
+finetune:
+  epochs: 50
+  learning_rate: 0.0001
+  weight_decay: 0.0001
+
+paths:
+  data_dir: './sample_data/contrastive_data' 
+  excel_path: './sample_data/contrastive_data/unlabeled_data.xlsx'
+  checkpoint_dir: './experiments/checkpoints'
+  log_dir: './experiments/logs'
+  save_dir: './experiments/fig'
