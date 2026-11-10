@@ -39,22 +39,22 @@ class SupConLossWithTwoViews(nn.Module):
         labels = torch.cat([labels, labels], dim=0)  # [2B]
         
         # Calculate similarity matrix
-        sim_matrix = torch.mm(features, features.T) / self.temperature  # [2B, 2B] (Controls the sharpness of the similarity distribution)
+        sim_matrix = torch.mm(features, features.T) / self.temperature  # [2B, 2B]
         
         # Create positive mask
         # 1. Samples with the same label are positive pairs
-        label_mask = torch.eq(labels.unsqueeze(1), labels.unsqueeze(0)).float() # Broadcasting to get a [2B, 2B] matrix
+        label_mask = torch.eq(labels.unsqueeze(1), labels.unsqueeze(0)).float() # [2B, 2B] 
         
         # 2. Two views of the same image are also positive pairs (diagonal shifted by batch_size)
-        batch_indices = torch.arange(batch_size, device=device) # Creates an index sequence from 0 to batch_size-1
-        view_mask = torch.zeros_like(label_mask)  # Creates a zero matrix with the same shape as label_mask
+        batch_indices = torch.arange(batch_size, device=device) 
+        view_mask = torch.zeros_like(label_mask) 
         view_mask[batch_indices, batch_indices + batch_size] = 1
-        view_mask[batch_indices + batch_size, batch_indices] = 1  # view_mask marks the two augmented views of the same image as positive pairs [2B, 2B]
+        view_mask[batch_indices + batch_size, batch_indices] = 1 
         
         # Combine masks
         mask = label_mask * (1 - torch.eye(2*batch_size, device=device)) + view_mask # If a pair satisfies both conditions, they add up to 2
 
-        # ✅ Correct: Convert to boolean mask
+        # Convert to boolean mask
         is_positive = (mask > 0).float()  # [2B, 2B], values are 0 or 1
         
         # Negative mask
@@ -110,8 +110,8 @@ class SupConLoss(nn.Module):
         # Create positive mask
         if mask is None:
             # Samples with the same label are positive pairs
-            labels = labels.contiguous().view(-1, 1)  # Reshape labels to a column vector [B, 1]
-            mask = torch.eq(labels, labels.T).float().to(device)  # labels and labels.T broadcast to [B, B] for comparison, resulting in a matrix with True on the diagonal [B, B]
+            labels = labels.contiguous().view(-1, 1)  
+            mask = torch.eq(labels, labels.T).float().to(device) 
         
         # Remove self (set diagonal to 0)
         mask = mask * (1 - torch.eye(batch_size, device=device))
@@ -120,24 +120,24 @@ class SupConLoss(nn.Module):
         neg_mask = 1 - mask
         
         # Calculate exp similarity
-        exp_sim = torch.exp(sim_matrix)  # Exponentiating converts similarity to non-negative weights and amplifies differences [B, B]
+        exp_sim = torch.exp(sim_matrix) 
         
         # Denominator: sum of exp over all negative samples
-        neg_sum = (exp_sim * neg_mask).sum(dim=1) # Sum along each row, calculating the sum of similarities with all negative samples for each sample [B]
+        neg_sum = (exp_sim * neg_mask).sum(dim=1) 
         
         # Numerator: sum of exp over positive samples
-        pos_sum = (exp_sim * mask).sum(dim=1) # [B]
+        pos_sum = (exp_sim * mask).sum(dim=1) 
         
         # Calculate loss
-        all_sum = (exp_sim * (mask + neg_mask)).sum(dim=1)  # Or simply exp_sim.sum(dim=1)
+        all_sum = (exp_sim * (mask + neg_mask)).sum(dim=1) 
 
         # Positive sample probability = pos_sum / all_sum
-        prob = pos_sum / (all_sum + 1e-8)  # [B]
+        prob = pos_sum / (all_sum + 1e-8) 
 
         # Loss = -log(probability)
-        loss = -torch.log(prob + 1e-8)   # [B]
+        loss = -torch.log(prob + 1e-8)  
         
-        # Only calculate loss for samples with at least 1 positive sample
+    
         valid_mask = mask.sum(dim=1) > 0
         loss = loss[valid_mask].mean()   # Scalar, log(1) = 0
         

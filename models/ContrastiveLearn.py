@@ -9,9 +9,9 @@ class ContrastiveHead(nn.Module):
     def __init__(self, in_features=512, hidden_features=256, out_features=128):
         super().__init__()  
         self.projector = nn.Sequential(
-            nn.Linear(in_features, hidden_features),  # Linear transformation (dimension reduction)
-            nn.ReLU(),                                # Non-linear activation
-            nn.Linear(hidden_features, out_features)  # Linear transformation (mapping to contrastive space)
+            nn.Linear(in_features, hidden_features), 
+            nn.ReLU(),                              
+            nn.Linear(hidden_features, out_features)  
         )
         
     def forward(self, x):
@@ -80,7 +80,7 @@ class SimCLR(nn.Module):
         labels = torch.arange(batch_size).to(z.device) 
         labels = torch.cat([labels + batch_size, labels]) 
 
-        # 🔥 Fix: Mask out self-similarity (diagonal) to prevent trivial solutions
+
         mask = torch.eye(2 * batch_size, dtype=torch.bool, device=z.device)
         similarity = similarity.masked_fill(mask, float('-inf'))
 

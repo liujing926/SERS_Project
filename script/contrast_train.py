@@ -32,21 +32,20 @@ def seed_worker(worker_id):
     np.random.seed(worker_seed)
     random.seed(worker_seed)
 
-# Create generator
+
 g = torch.Generator()
 g.manual_seed(42)
 
 
 def main():
-    # Use relative path for config
+
     config_path = './config/config.yaml'
     print(f"Using configuration file: {config_path}")
 
-    # Load configuration
+
     with open(config_path, 'r') as f:
         config = yaml.safe_load(f)
         
-    # Create necessary directories
     os.makedirs(config['paths']['checkpoint_dir'], exist_ok=True)
     os.makedirs(config['paths']['log_dir'], exist_ok=True)
     os.makedirs('./experiments/tsne', exist_ok=True)  # Directory for visualization
@@ -54,12 +53,12 @@ def main():
     # Set random seed
     set_seed(42)
 
-    # Setup logger
+
     logger = setup_logger(config['paths']['log_dir'])
     logger.info("Starting contrastive learning training")
 
     # Create dataset
-    # 1. Use EFDataset to load image paths and roughness labels
+    #  load image paths and  labels
     path_dataset = EFDataset(
         image_dir=config['paths']['data_dir'],
         is_labeled=True, 
@@ -72,11 +71,11 @@ def main():
 
     print(f"Train set: {train_size}, Val set: {val_size}")
     
-    # Get labels
+ 
     train_labels = [path_dataset.labels[i] for i in train_dataset.indices]
     val_labels = [path_dataset.labels[i] for i in val_dataset.indices]
 
-    # 2. Use ContrastiveDataset to generate dual-view augmentations
+    #  generate dual-view augmentations
     contrastive_dataset_train = ContrastiveDataset(
         image_paths=[path_dataset.image_paths[i] for i in train_dataset.indices], 
         labels=train_labels, 
@@ -118,7 +117,7 @@ def main():
         generator=g  
     )
 
-    # Create model
+ 
     backbone = ResNetBackbone.get_backbone(config['model']['backbone'])
     projection = ContrastiveLearn.ContrastiveHead(
         in_features=512 if config['model']['backbone'] == 'resnet18' else 2048,
@@ -127,7 +126,6 @@ def main():
     model = ContrastiveLearn.SupConModel(backbone, projection)
     
     device = torch.device('cpu')
-    # device = torch.device('cpu') # Keep this if you strictly want to run on CPU
     model = model.to(device)
 
     # Optimizer and loss function
@@ -165,7 +163,7 @@ def main():
             checkpoint_path = os.path.join(config['paths']['checkpoint_dir'], f'contrastive_epoch{epoch+1}.pth')
             torch.save(model.state_dict(), checkpoint_path)
 
-        # ========== Validation Phase ==========
+        #  Validation Phase
         if (epoch + 1) % 1 == 0 or epoch == epochs - 1: 
             model.eval()
             val_loss = 0
@@ -181,7 +179,7 @@ def main():
             
             pos_sims, neg_sims = compute_similarity_stats(model, dataloader_val_no_labels, device)
         
-            print(f"\n📊 Epoch {epoch+1}/{epochs}")
+            print(f"\nEpoch {epoch+1}/{epochs}")
             print(f"   Train Loss: {avg_loss:.4f}")
             print(f"   Val Loss: {avg_val_loss:.4f}")  
             print(f"   Positive Similarity: {pos_sims.mean():.4f} ± {pos_sims.std():.4f}")
@@ -205,7 +203,7 @@ def main():
     # Save final model after training
     final_path = os.path.join(config['paths']['checkpoint_dir'], 'contrastive_final.pth')
     torch.save(model.state_dict(), final_path)
-    print(f"✅ Final model saved: {final_path}")
+    print(f"Final model saved: {final_path}")
     logger.info("Training completed")
 
 

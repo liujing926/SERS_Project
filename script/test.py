@@ -13,7 +13,7 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
 
-# Import your models
+
 from models import ContrastiveLearn
 from models.backbone import ResNetBackbone
 from data.dataset import EFDataset, ContrastiveDataset
@@ -23,7 +23,7 @@ from utils.evaluate_with_classifier import evaluate_with_classifier
 import warnings
 warnings.filterwarnings('ignore')
 
-# Load config
+
 config_path = './config/config.yaml'
 with open(config_path, 'r') as f:
     config = yaml.safe_load(f)
@@ -67,8 +67,7 @@ def batch_test(test_dir, model, ref_features, ref_labels, ref_names, device='cpu
             print(f"      {j+1}. {ref_names[idx]} (Roughness: {label} - {roughness_map[label]}, Similarity: {sim:.3f})")
         print()
     
-    print("="*80)
-    print(f"✅ Batch testing completed! Tested {len(results)} images.")
+    print(f"Batch testing completed! Tested {len(results)} images.")
     
     return results
 
@@ -82,13 +81,13 @@ def visualize_batch_results(results, ref_dir, save_dir='./test_results'):
         img = Image.open(result['img_path'])
         plt.figure(figsize=(12, 4))
         
-        # Test image
+
         plt.subplot(1, 4, 1)
         plt.imshow(img)
         plt.title(f"Test Image\nPred: {roughness_map[result['pred_label']]}")
         plt.axis('off')
         
-        # Top 3 reference images
+
         for i, (label, sim, name) in enumerate(zip(
             result['top_k_labels'][:3], 
             result['top_k_sims'][:3],
@@ -108,7 +107,7 @@ def visualize_batch_results(results, ref_dir, save_dir='./test_results'):
         plt.savefig(save_path, dpi=150)
         plt.close()
     
-    print(f"✅ Visualization results saved to: {save_dir}")
+    print(f"Visualization results saved to: {save_dir}")
 
 
 def evaluate_classification(model, dataloader, device):
@@ -156,7 +155,7 @@ def load_model(checkpoint_path, device='cpu'):
     model = model.to(device)
     model.eval()
     
-    print(f"✅ Model loaded: {checkpoint_path}")
+    print(f"Model loaded: {checkpoint_path}")
     return model
 
 
@@ -173,7 +172,7 @@ def extract_features(model, image_path, device='cpu', max_size=1024):
             new_height = int(height * ratio)
             image = image.resize((new_width, new_height), Image.LANCZOS)
     except Exception as e:
-        print(f"❌ Failed to open/resize image {image_path}: {e}")
+        print(f"Failed to open/resize image {image_path}: {e}")
         return np.zeros(512)
     
     transform = transforms.Compose([
@@ -183,7 +182,7 @@ def extract_features(model, image_path, device='cpu', max_size=1024):
                            std=[0.229, 0.224, 0.225])
     ])
     
-    image = Image.open(image_path).convert('RGB')
+ 
     image_tensor = transform(image).unsqueeze(0).to(device)
     
     with torch.no_grad():
@@ -196,7 +195,6 @@ def extract_features(model, image_path, device='cpu', max_size=1024):
 def load_reference_features(data_dir, excel_path, model, device='cpu'):
     """Load features and labels of all images in the training set as references"""
     df = pd.read_excel(excel_path)
-    # 🔥 Updated column name to English
     label_dict = dict(zip(df['Filename'], df['Roughness (1-3)']))
     
     image_paths = glob.glob(os.path.join(data_dir, "*.jpg"))
@@ -216,7 +214,7 @@ def load_reference_features(data_dir, excel_path, model, device='cpu'):
             labels_list.append(label_dict[name])
             names_list.append(filename)
     
-    print(f"✅ Loaded {len(features_list)} reference images.")
+    print(f"Loaded {len(features_list)} reference images.")
     return np.array(features_list), np.array(labels_list), names_list
 
 
@@ -241,8 +239,7 @@ def predict_roughness(test_features, ref_features, ref_labels, k=5):
 
 
 if __name__ == '__main__':
-    # ========== Configuration ==========
-    # 🔥 Updated to relative paths
+
     checkpoint_path = './experiments/checkpoints/contrastive_epoch50.pth'
     
     # Training data directory (Reference set)
@@ -254,19 +251,19 @@ if __name__ == '__main__':
     
     device = 'cpu' 
     
-    # 1. Load model
+
     model = load_model(checkpoint_path, device)
     
-    # 2. Load reference set
+
     ref_features, ref_labels, ref_names = load_reference_features(data_dir, excel_path, model, device)
     
-    # 3. Batch test
+
     results = batch_test(test_dir, model, ref_features, ref_labels, ref_names, device)
 
-    # 4. Roughness accuracy test
+
     test_dataset = EFDataset(
         image_dir=test_dir,
-        excel_path='./sample_data/labels/data_EF.xlsx',  # 🔥 Updated to data_EF.xlsx
+        excel_path='./sample_data/labels/data_EF.xlsx',  
         is_labeled=True,  
         transform=get_test_transform()  
     )
@@ -280,12 +277,10 @@ if __name__ == '__main__':
 
     test_accuracy = evaluate_classification(model, test_loader, device)
     print(f"Test set roughness accuracy: {test_accuracy:.4f}")
-    
-    # 5. Output results
+
     roughness_map = {1: 'Smooth', 2: 'Medium', 3: 'Rough'}
-    print("\n" + "="*50)
-    print(f"📊 Prediction Results")
-    print("="*50)
-    
-    # 6. Visualize
+
+    print(f"Prediction Results")
+
+
     visualize_batch_results(results, data_dir, save_dir='./test_results')

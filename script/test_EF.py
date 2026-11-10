@@ -34,14 +34,14 @@ def load_models(checkpoint_path, ranking_model_path, device='cpu'):
     backbone.load_state_dict(backbone_state)
     backbone = backbone.to(device)
     backbone.eval()
-    print(f"✅ Loaded backbone: {checkpoint_path}")
+    print(f"Loaded backbone: {checkpoint_path}")
     
     # Load ranking model
     ranking_model = RankingModel(input_dim=512, hidden_dim=256)
     ranking_model.load_state_dict(torch.load(ranking_model_path, map_location=device))
     ranking_model = ranking_model.to(device)
     ranking_model.eval()
-    print(f"✅ Loaded ranking model: {ranking_model_path}")
+    print(f"Loaded ranking model: {ranking_model_path}")
     
     return backbone, ranking_model
 
@@ -51,7 +51,7 @@ def load_calibration_params(calibration_file='calibration_params.csv'):
     df = pd.read_csv(calibration_file)
     a = df['a'].values[0]
     b = df['b'].values[0]
-    print(f"✅ Loaded calibration parameters: log10(EF) = {a:.4f} × score + {b:.4f}")
+    print(f"Loaded calibration parameters: log10(EF) = {a:.4f} × score + {b:.4f}")
     return a, b
 
 
@@ -68,21 +68,21 @@ def predict_batch_image(backbone, ranking_model, image_paths, a, b, device='cpu'
     results = []
     
     for img_path in image_paths:
-        # Load image   
+
         img = Image.open(img_path).convert('RGB')
         img_tensor = transform(img).unsqueeze(0).to(device)
     
-        # Extract features
+
         with torch.no_grad():
             feat = backbone(img_tensor)
             feat = feat.cpu().numpy().flatten()
     
-        # Calculate ranking score
+
         feat_tensor = torch.tensor(feat, dtype=torch.float32).to(device)
         with torch.no_grad():
             score = ranking_model(feat_tensor).item()
     
-        # Calibrate EF value
+
         log10_ef = a * score + b
         ef = 10 ** log10_ef
         
@@ -112,10 +112,9 @@ def test_ranking_pairs(test_pairs_excel, image_dir, backbone, ranking_model, a, 
     
     correct = 0
     total = 0
-    
-    print("\n" + "="*70)
+
     print("Pairwise Ranking Test")
-    print("="*70)
+
     
     for _, row in df.iterrows():
         img_a = f"{row['Image A']}.jpg"
@@ -135,11 +134,11 @@ def test_ranking_pairs(test_pairs_excel, image_dir, backbone, ranking_model, a, 
         print(f"\n{img_a} vs {img_b}")
         print(f"  True: {'A better' if true_label == 1 else 'B better'}")
         print(f"  Pred: {'A better' if pred_label == 1 else 'B better'}")
-        print(f"  Result: {'✓' if is_correct else '✗'}")
+        print(f"  Result: {'Correct' if is_correct else 'Wrong'}")
         print(f"  score_A: {score_a:.4f}, score_B: {score_b:.4f}")
     
     accuracy = correct / total if total > 0 else 0
-    print("\n" + "="*70)
+
     print(f"Ranking Accuracy: {accuracy:.2%} ({correct}/{total})")
     
     return accuracy
@@ -157,18 +156,18 @@ def test_model_batch(test_excel, image_dir, backbone, ranking_model, a, b, devic
             image_paths.append(img_path)
             valid_rows.append(row)
         else:
-            print(f"⚠️ Image not found: {img_path}")
+            print(f"Image not found: {img_path}")
     
     if not image_paths:
-        print("❌ No test images found")
+        print("No test images found")
         return []
     
     batch_results = predict_batch_image(backbone, ranking_model, image_paths, a, b, device)
     
     results = []
-    print("\n" + "="*70)
+
     print("Test Set Prediction Results")
-    print("="*70)
+
     
     all_errors = []
     
@@ -198,22 +197,22 @@ def test_model_batch(test_excel, image_dir, backbone, ranking_model, a, b, devic
             result['error_percent'] = error_percent
             all_errors.append(error_log10)
             
-            print(f"\n📷 {filename}")
+            print(f"\n {filename}")
             print(f"   Score: {score:.4f}")
             print(f"   Pred EF: {ef:.2e} (log10: {log10_ef:.2f})")
             print(f"   True EF: {true_ef:.2e} (log10: {true_log10:.2f})")
             print(f"   Error: {error_log10:.2f} log10 units ({error_percent:.1f}%)")
         else:
-            print(f"\n📷 {filename}")
+            print(f"\n{filename}")
             print(f"   Score: {score:.4f}")
             print(f"   Pred EF: {ef:.2e} (log10: {log10_ef:.2f})")
         
         results.append(result)
     
     if all_errors:
-        print("\n" + "="*70)
+
         print("Test Set Statistics")
-        print("="*70)
+
         print(f"Mean Absolute Error: {np.mean(all_errors):.3f} log10 units")
         print(f"Max Error: {np.max(all_errors):.3f} log10 units")
         print(f"Min Error: {np.min(all_errors):.3f} log10 units")
@@ -274,19 +273,18 @@ def visualize_test_results(results, save_path='test_results.png'):
     
     plt.savefig(save_path, dpi=150)
     plt.show()
-    print(f"✅ Test results plot saved: {save_path}")
+    print(f"Test results plot saved: {save_path}")
 
 
 def save_calibration_params(a, b, save_path='calibration_params.csv'):
     """Save calibration parameters"""
     df = pd.DataFrame({'a': [a], 'b': [b]})
     df.to_csv(save_path, index=False)
-    print(f"✅ Calibration parameters saved: {save_path}")
+    print(f" Calibration parameters saved: {save_path}")
 
 
 def main():
     # ========== Configuration ==========
-    # 🔥 Updated to relative paths for GitHub
     checkpoint_path = './experiments/checkpoints/contrastive_epoch50.pth'
     ranking_model_path = './experiments/checkpoints/best_ranking_model.pth'
     
@@ -303,39 +301,32 @@ def main():
     a = 1.3560
     b = 4.9766
     
-    print("="*70)
+
     print("Final Model Testing")
-    print("="*70)
-    
-    # 1. Load models
+
     backbone, ranking_model = load_models(checkpoint_path, ranking_model_path, device)
     
-    # 2. Save calibration parameters
     save_calibration_params(a, b)
     
-    # 3. EF value prediction test (if true EF values exist)
+
     if os.path.exists(test_excel):
         results = test_model_batch(test_excel, test_image_dir, backbone, ranking_model, a, b, device)
         visualize_test_results(results)
         
-        # Save results
+   
         if results:
             results_df = pd.DataFrame(results)
             results_df.to_csv('test_results.csv', index=False)
-            print(f"✅ Test results saved: test_results.csv")
+            print(f"Test results saved: test_results.csv")
     else:
-        print(f"⚠️ Test set Excel not found: {test_excel}")
+        print(f"Test set Excel not found: {test_excel}")
     
-    # 4. Pairwise ranking test (if comparison pairs exist)
+
     if os.path.exists(test_pairs_excel):
         accuracy = test_ranking_pairs(test_pairs_excel, test_image_dir, backbone, ranking_model, a, b, device)
         print(f"\nFinal ranking accuracy: {accuracy:.2%}")
     else:
-        print(f"⚠️ Ranking test Excel not found: {test_pairs_excel}")
-    
-    print("\n" + "="*70)
-    print("✅ All done!")
-    print("="*70)
+        print(f"Ranking test Excel not found: {test_pairs_excel}")
 
 
 if __name__ == '__main__':

@@ -19,19 +19,16 @@ Image.MAX_IMAGE_PIXELS = None
 from torchvision import transforms
 import matplotlib.pyplot as plt
 
-# Import models
 from models import ContrastiveLearn
 from models.backbone import ResNetBackbone
 
-# ========== 1. Load pre-trained backbone ==========
+# Load pre-trained backbone 
 def load_pretrained_backbone(checkpoint_path, device='cpu'):
     """Load contrastive pre-trained backbone"""
     backbone = ResNetBackbone.get_backbone('resnet18')
     
-    # Load weights
     checkpoint = torch.load(checkpoint_path, map_location=device)
     
-    # Extract backbone weights
     backbone_state = {}
     for k, v in checkpoint.items():
         if k.startswith('backbone.'):
@@ -41,10 +38,10 @@ def load_pretrained_backbone(checkpoint_path, device='cpu'):
     backbone = backbone.to(device)
     backbone.eval()
     
-    print(f"✅ Loaded pre-trained backbone: {checkpoint_path}")
+    print(f"Loaded pre-trained backbone: {checkpoint_path}")
     return backbone
 
-# ========== 2. Extract features ==========
+# Extract features 
 def extract_features(backbone, image_paths, device='cpu', max_size=1024):
     """Batch extract image features"""
     transform = transforms.Compose([
@@ -81,12 +78,12 @@ def extract_features(backbone, image_paths, device='cpu', max_size=1024):
             valid_paths.append(img_path)
             
         except Exception as e:
-            print(f"  ❌ Failed: {os.path.basename(img_path)} - {e}")
+            print(f"  Failed: {os.path.basename(img_path)} - {e}")
     
-    print(f"✅ Successfully extracted {len(features)} feature vectors")
+    print(f"Successfully extracted {len(features)} feature vectors")
     return np.array(features), valid_paths
 
-# ========== 3. Build ranking pairs from Excel ==========
+# Build ranking pairs from Excel 
 def build_ranking_pairs(excel_path, image_dir):
     """
     Build ranking comparison pairs from Excel
@@ -123,7 +120,7 @@ def build_ranking_pairs(excel_path, image_dir):
             if img_path:
                 imgs.append(img_path)
             else:
-                print(f"⚠️ Image not found for {name}")
+                print(f"Image not found for {name}")
         
         # Build comparison pairs
         for i in range(len(imgs)):
@@ -136,11 +133,11 @@ def build_ranking_pairs(excel_path, image_dir):
                 if pd.notna(row['Original EF Value']):
                     ef_values[row['Filename']] = row['Original EF Value']
     
-    print(f"✅ Constructed {len(pairs)} comparison pairs")
-    print(f"📊 Images with EF values: {len(ef_values)}")
+    print(f"Constructed {len(pairs)} comparison pairs")
+    print(f"Images with EF values: {len(ef_values)}")
     return pairs, ef_values
 
-# ========== 4. Ranking Dataset ==========
+# Ranking Dataset
 class RankingDataset(Dataset):
     """Ranking learning dataset"""
     def __init__(self, pairs, feature_dict):
@@ -152,7 +149,7 @@ class RankingDataset(Dataset):
                     'feat_b': feature_dict[img_b],
                     'label': label
                 })
-        print(f"✅ Dataset contains {len(self.data)} valid pairs")
+        print(f"Dataset contains {len(self.data)} valid pairs")
     
     def __len__(self):
         return len(self.data)
@@ -163,7 +160,7 @@ class RankingDataset(Dataset):
                 torch.tensor(item['feat_b'], dtype=torch.float32),
                 torch.tensor(item['label'], dtype=torch.float32))
 
-# ========== 5. Ranking Model ==========
+# Ranking Model 
 class RankingModel(nn.Module):
     """Ranking model: inputs features, outputs ranking score"""
     def __init__(self, input_dim=512, hidden_dim=256):
@@ -178,7 +175,7 @@ class RankingModel(nn.Module):
     def forward(self, x):
         return self.net(x).squeeze()
 
-# ========== 6. Ranking Loss ==========
+# Ranking Loss 
 class RankingLoss(nn.Module):
     """Pairwise Ranking Loss"""
     def __init__(self, margin=0.5):
@@ -196,7 +193,7 @@ class RankingLoss(nn.Module):
         
         return loss.mean()
 
-# ========== 7. Train Ranking Model ==========
+# Train Ranking Model 
 def train_ranking_model(feature_dict, pairs, epochs=100, lr=0.001):
     """Train ranking model"""
     valid_pairs = []
@@ -207,7 +204,7 @@ def train_ranking_model(feature_dict, pairs, epochs=100, lr=0.001):
     print(f"Valid comparison pairs: {len(valid_pairs)} / {len(pairs)}")
     
     if len(valid_pairs) == 0:
-        print("❌ No valid pairs available")
+        print("No valid pairs available")
         return None, []
 
     random.seed(42)
@@ -232,15 +229,15 @@ def train_ranking_model(feature_dict, pairs, epochs=100, lr=0.001):
     optimizer = optim.Adam(model.parameters(), lr=lr)
     criterion = RankingLoss(margin=0.5)
     
-    print("\n" + "="*50)
+  
     print("Starting ranking model training")
-    print("="*50)
+
     
     train_losses = []
     val_losses = []
     best_val_loss = float('inf')
     
-    # 🔥 Fix: Define the checkpoint directory so it saves in the right place
+
     os.makedirs('./experiments/checkpoints', exist_ok=True)
     best_model_path = './experiments/checkpoints/best_ranking_model.pth'
     
@@ -283,8 +280,7 @@ def train_ranking_model(feature_dict, pairs, epochs=100, lr=0.001):
         if (epoch + 1) % 10 == 0:
             print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}")
 
-    print("="*50)
-    print("✅ Training complete")
+    print("Training complete")
     print(f"Best validation loss: {best_val_loss:.4f}")
     
     # Plot loss curve
@@ -300,7 +296,7 @@ def train_ranking_model(feature_dict, pairs, epochs=100, lr=0.001):
     
     return model, val_pairs
 
-# ========== 8. Evaluate Ranking Accuracy ==========
+# Evaluate Ranking Accuracy 
 def evaluate_ranking_accuracy(model, feature_dict, pairs):
     """Evaluate ranking accuracy"""
     model.eval()
@@ -332,33 +328,32 @@ def evaluate_ranking_accuracy(model, feature_dict, pairs):
             total += 1
     
     accuracy = correct / total if total > 0 else 0
-    print(f"\n📊 Ranking Accuracy: {correct}/{total} = {accuracy:.4f}")
+    print(f"\n Ranking Accuracy: {correct}/{total} = {accuracy:.4f}")
 
     if wrong_cases:
-        print(f"\n❌ Wrong cases (Total {len(wrong_cases)}):")
+        print(f"\n Wrong cases (Total {len(wrong_cases)}):")
         for i, case in enumerate(wrong_cases[:5], 1): # Only print first 5 to avoid spamming
             print(f"Case {i}: A={case['img_a_name']}, B={case['img_b_name']} | True: {'A' if case['true_label']==1 else 'B'} | Pred: {'A' if case['pred_label']==1 else 'B'}")
     else:
-        print("\n✅ All predictions correct!")
+        print("\n All predictions correct!")
     
     return accuracy, wrong_cases
 
-# ========== 9. Main ==========
 if __name__ == '__main__':
-    # 🔥 Fix: Updated paths for GitHub repository
+
     checkpoint_path = './experiments/checkpoints/contrastive_final.pth'
     image_dir = './sample_data/ranking_data/images'
     excel_path = './sample_data/labels/data_EF.xlsx'
     
     device = 'cpu'
     
-    # 1. Load pre-trained backbone
+
     backbone = load_pretrained_backbone(checkpoint_path, device)
     
-    # 2. Build pairs from Excel
+
     pairs, ef_values = build_ranking_pairs(excel_path, image_dir)
     
-    # 3. Get all image paths
+
     all_image_paths = set()    
     for img_a, img_b, _ in pairs:
         all_image_paths.add(img_a)
@@ -367,13 +362,13 @@ if __name__ == '__main__':
     
     print(f"\nImages requiring feature extraction: {len(all_image_paths)}")
     
-    # 4. Extract features
+
     features, valid_paths = extract_features(backbone, all_image_paths, device)
     
-    # 5. Build feature dictionary
+
     feature_dict = {path: feat for path, feat in zip(valid_paths, features)}
     
-    # 6. Filter valid pairs
+
     valid_pairs = []
     for img_a, img_b, label in pairs:
         if img_a in feature_dict and img_b in feature_dict:
@@ -381,15 +376,15 @@ if __name__ == '__main__':
     
     print(f"Valid comparison pairs: {len(valid_pairs)} / {len(pairs)}")
     
-    # 7. Train model
+
     model, val_pairs = train_ranking_model(feature_dict, pairs, epochs=100, lr=0.001)
     
-    # Save train/val splits
+
     import pickle
     with open('./experiments/train_val_pairs.pkl', 'wb') as f:
         pickle.dump({'val_pairs': val_pairs}, f)
     
-    # 8. Evaluate
+
     evaluate_ranking_accuracy(model, feature_dict, val_pairs)
     
-    print("\n✅ All done! Best model saved in experiments/checkpoints/best_ranking_model.pth")
+    print("\nBest model saved in experiments/checkpoints/best_ranking_model.pth")

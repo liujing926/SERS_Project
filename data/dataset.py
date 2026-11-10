@@ -41,7 +41,7 @@ class EFDataset(Dataset):
 
         # Read Excel file
         if excel_path is None:
-            # 🔥 Automatically match the Excel file based on the folder name
+ 
             if 'contrastive' in image_dir:
                 excel_path = './sample_data/contrastive_data/unlabeled_data.xlsx'
             elif 'ranking' in image_dir:
@@ -55,18 +55,18 @@ class EFDataset(Dataset):
         print(f"Columns: {self.df.columns.tolist()}")
 
         # Create mapping dictionary from filename to label
-        # 🔥 Smart matching for column names (English or Chinese)
+
         if 'Filename' in self.df.columns:
             name_col = 'Filename'
         else:
-            name_col = '文件名'
+            raise ValueError("Column 'Filename' not found in the Excel file.")
 
         if 'Roughness (1-3)' in self.df.columns:
             label_col = 'Roughness (1-3)'
         elif 'In-group Rank' in self.df.columns:
             label_col = 'In-group Rank'
         else:
-            label_col = '粗糙度(1-3)'
+            raise ValueError("Target label column not found in dataset.")
 
         self.label_dict = dict(zip(self.df[name_col], self.df[label_col]))
 
@@ -100,7 +100,7 @@ class EFDataset(Dataset):
         for img_path in self.image_paths:
             # Get filename (without path and extension)
             filename = os.path.basename(img_path)
-            # 🔥 Safer way to remove extension
+ 
             name_without_ext = os.path.splitext(filename)[0]
 
             # Check if it exists in excel

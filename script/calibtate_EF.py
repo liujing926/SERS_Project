@@ -15,10 +15,10 @@ from PIL import Image
 from torchvision import transforms
 from sklearn.metrics import r2_score
 
-# Remove PIL image size limit
+
 Image.MAX_IMAGE_PIXELS = None
 
-# Import your models
+
 from models.backbone import ResNetBackbone
 from models import ContrastiveLearn
 from EF_ranking_train import RankingModel, extract_features
@@ -37,7 +37,6 @@ def load_pretrained_backbone(checkpoint_path, device='cpu'):
     backbone.load_state_dict(backbone_state)
     backbone = backbone.to(device)
     backbone.eval()
-    print(f"✅ Loaded pre-trained backbone: {checkpoint_path}")
     return backbone
 
 
@@ -47,7 +46,6 @@ def load_ranking_model(model_path, device='cpu'):
     model.load_state_dict(torch.load(model_path, map_location=device))
     model = model.to(device)
     model.eval()
-    print(f"✅ Loaded ranking model: {model_path}")
     return model
 
 
@@ -63,7 +61,7 @@ def get_all_image_paths(excel_path, image_dir):
                 all_paths.append(img_path)
                 break
         else:
-            print(f"⚠️ Image not found: {filename}")
+            print(f"Image not found: {filename}")
     return all_paths
 
 
@@ -73,7 +71,7 @@ def compute_scores(model, backbone, image_paths, device='cpu'):
     features = []
     valid_paths = []
     
-    # Extract features first
+
     for img_path in image_paths:
         try:
             img = Image.open(img_path).convert('RGB')
@@ -92,16 +90,15 @@ def compute_scores(model, backbone, image_paths, device='cpu'):
             features.append(feat)
             valid_paths.append(img_path)
         except Exception as e:
-            print(f"  ❌ Feature extraction failed: {os.path.basename(img_path)} - {e}")
+            print(f"  Feature extraction failed: {os.path.basename(img_path)} - {e}")
     
-    # Calculate scores
+ 
     for img_path, feat in zip(valid_paths, features):
         feat_tensor = torch.tensor(feat, dtype=torch.float32).to(device)
         with torch.no_grad():
             score = model(feat_tensor).item()
         scores[img_path] = score
     
-    print(f"✅ Calculated ranking scores for {len(scores)} images")
     return scores
 
 
@@ -134,7 +131,7 @@ def calibrate_with_ef_anchors(scores, excel_path, image_dir):
                 print(f"  Anchor: {filename} -> score={score:.4f}, log10(EF)={log_ef:.2f}")
     
     if len(scores_list) < 3:
-        print(f"❌ Insufficient anchors! Only {len(scores_list)} EF values, at least 3 required.")
+        print(f"Insufficient anchors. Only {len(scores_list)} EF values, at least 3 required.")
         return None, None, None, None
     
     # Linear fitting
@@ -160,7 +157,7 @@ def plot_calibration(scores_array, log_ef_array, a, b, r2, save_path='calibratio
     # Scatter plot
     plt.scatter(scores_array, log_ef_array, color='blue', s=80, label='Anchor Data')
     
-    # Fitted line
+
     score_range = np.array([min(scores_array), max(scores_array)])
     log_ef_fit = a * score_range + b
     plt.plot(score_range, log_ef_fit, color='red', linewidth=2, label=f'Fitted Line: y={a:.3f}x+{b:.3f}')
@@ -178,7 +175,7 @@ def plot_calibration(scores_array, log_ef_array, a, b, r2, save_path='calibratio
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.show()
-    print(f"✅ Calibration plot saved: {save_path}")
+
 
 
 def predict_ef_for_images(scores, a, b, output_csv='ef_predictions.csv'):
@@ -194,17 +191,17 @@ def predict_ef_for_images(scores, a, b, output_csv='ef_predictions.csv'):
             'EF': ef
         })
     
-    # Sort by score
+
     results.sort(key=lambda x: x['score'], reverse=True)
     
     # Save CSV
     df = pd.DataFrame(results)
     df.to_csv(output_csv, index=False)
-    print(f"✅ Prediction results saved: {output_csv}")
+    print(f"Prediction results saved: {output_csv}")
     
-    # Print top 10
+
     print("\nPredictions (sorted from highest to lowest score):")
-    print("-"*60)
+
     for i, r in enumerate(results[:10]):
         print(f"{i+1}. {r['filename']}")
         print(f"   Score: {r['score']:.4f}")
@@ -217,7 +214,6 @@ def predict_ef_for_images(scores, a, b, output_csv='ef_predictions.csv'):
 
 def main():
     # ========== Configuration ==========
-    # 🔥 IMPORTANT: Change these paths to your relative paths before uploading to GitHub
     checkpoint_path = './experiments/checkpoints/contrastive_epoch50.pth'
     ranking_model_path = './experiments/checkpoints/best_ranking_model.pth'
     image_dir = './sample_data/ranking_data/images'
@@ -225,9 +221,7 @@ def main():
     
     device = 'cpu'
     
-    print("="*60)
     print("EF Value Calibration Script")
-    print("="*60)
     
     # 1. Load models
     print("\n1. Loading models...")
@@ -248,7 +242,7 @@ def main():
     result = calibrate_with_ef_anchors(scores, excel_path, image_dir)
     
     if result[0] is None:
-        print("❌ Calibration failed, please check EF value data")
+        print("Calibration failed, please check EF value data")
         return
     
     a, b, r2, (scores_array, log_ef_array, valid_files) = result
@@ -261,8 +255,6 @@ def main():
     print("\n6. Predicting EF values for all images...")
     predict_ef_for_images(scores, a, b)
     
-    print("\n" + "="*60)
-    print("✅ Calibration completed successfully!")
     print(f"Formula used: log10(EF) = {a:.4f} × score + {b:.4f}")
     print("="*60)
 

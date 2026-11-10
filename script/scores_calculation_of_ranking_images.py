@@ -13,10 +13,9 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from torchvision import transforms
 
-# Remove PIL image size limit
+
 Image.MAX_IMAGE_PIXELS = None
 
-# Import your models
 from models.backbone import ResNetBackbone
 from models import ContrastiveLearn
 from EF_ranking_train import RankingModel
@@ -35,7 +34,7 @@ def load_pretrained_backbone(checkpoint_path, device='cpu'):
     backbone.load_state_dict(backbone_state)
     backbone = backbone.to(device)
     backbone.eval()
-    print(f"✅ Loaded pre-trained backbone: {checkpoint_path}")
+    print(f" Loaded pre-trained backbone: {checkpoint_path}")
     return backbone
 
 
@@ -45,7 +44,7 @@ def load_ranking_model(model_path, device='cpu'):
     model.load_state_dict(torch.load(model_path, map_location=device))
     model = model.to(device)
     model.eval()
-    print(f"✅ Loaded ranking model: {model_path}")
+    print(f" Loaded ranking model: {model_path}")
     return model
 
 
@@ -81,14 +80,14 @@ def plot_score_boxplot(train_scores, train_roughness, val_scores, val_roughness,
             train_data[int(rough)-1].append(score)
     
     axes[0].boxplot(train_data, positions=[1, 2, 3], widths=0.6)
-    # Translated x-tick labels
+
     axes[0].set_xticklabels(['Smooth (Class 1)', 'Medium (Class 2)', 'Rough (Class 3)'])
     axes[0].set_xlabel('Roughness Level')
     axes[0].set_ylabel('Ranking Score')
     axes[0].set_title(f'Training Set (n={len(train_scores)})')
     axes[0].axhline(y=0, color='gray', linestyle='--', alpha=0.5)
     
-    # Validation set
+
     val_data = [[], [], []]
     for score, rough in zip(val_scores, val_roughness):
         if rough is not None and 1 <= rough <= 3:
@@ -104,7 +103,7 @@ def plot_score_boxplot(train_scores, train_roughness, val_scores, val_roughness,
     plt.tight_layout()
     plt.savefig(save_path, dpi=150)
     plt.show()
-    print(f"✅ Boxplot saved: {save_path}")
+    print(f" Boxplot saved: {save_path}")
     
     # Print statistics
     print("\nTraining Set Score Statistics:")
@@ -120,19 +119,17 @@ def plot_score_boxplot(train_scores, train_roughness, val_scores, val_roughness,
 
 
 def main():
-    # 🔥 Updated to relative paths
+
     checkpoint_path = './experiments/checkpoints/contrastive_epoch50.pth'
     ranking_model_path = './experiments/checkpoints/best_ranking_model.pth'
     pkl_path = './experiments/contrastive_train_val_paths.pkl'
     
     device = 'cpu'
     
-    # 1. Load models
     print("\n1. Loading models...")
     backbone = load_pretrained_backbone(checkpoint_path, device)
     ranking_model = load_ranking_model(ranking_model_path, device)
     
-    # 2. Load image paths from pkl
     print("\n2. Loading train and val image paths...")
     if os.path.exists(pkl_path):
         with open(pkl_path, 'rb') as f:
@@ -144,15 +141,14 @@ def main():
         print(f"Training images: {len(train_images)}")
         print(f"Validation images: {len(val_images)}")
     else:
-        print(f"\n❌ Could not find {pkl_path}!")
+        print(f"\nCould not find {pkl_path}!")
         print("Please run the contrastive learning training script first to generate this file.")
         return
     
-    # 3. Compute scores
     print("\n3. Using train and val paths from pkl...")
-    print("\n" + "="*60)
+
     print("Plotting score boxplots for train and val sets")
-    print("="*60)
+
 
     print("\nComputing ranking scores for training set...")
     train_scores = compute_scores_for_paths(ranking_model, backbone, train_images, device)
@@ -160,17 +156,17 @@ def main():
     print("Computing ranking scores for validation set...")
     val_scores = compute_scores_for_paths(ranking_model, backbone, val_images, device)
 
-    # 4. Plot boxplot
+
     plot_score_boxplot(train_scores, train_roughness, val_scores, val_roughness)
 
-    # 5. Save scores to CSV
+
     df_train = pd.DataFrame({
         'filename': [os.path.basename(p) for p in train_images],
         'score': train_scores,
         'roughness': train_roughness
     })
     df_train.to_csv('train_scores.csv', index=False)
-    print(f"✅ Training scores saved to: train_scores.csv")
+    print(f" Training scores saved to: train_scores.csv")
 
     df_val = pd.DataFrame({
         'filename': [os.path.basename(p) for p in val_images],
@@ -178,7 +174,7 @@ def main():
         'roughness': val_roughness
     })
     df_val.to_csv('val_scores.csv', index=False)
-    print(f"✅ Validation scores saved to: val_scores.csv")
+    print(f" Validation scores saved to: val_scores.csv")
 
 
 if __name__ == '__main__':

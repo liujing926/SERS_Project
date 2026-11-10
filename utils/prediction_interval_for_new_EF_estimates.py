@@ -5,21 +5,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score
 
-# ========== 1. Extract Data ==========
-# Scores from model output
+
+
 scores = np.array([1.3900, -1.3508, -2.6481, -1.3884, -1.0507, 0.8152, -0.0337, 1.3588])
-# True log10(EF) values
+
 log10_ef_true = np.array([7.31, 4.00, 1.48, 4.00, 3.97, 5.32, 6.50, 7.02])
 
-# ========== 2. Linear Fitting ==========
+
 a, b = 1.2564, 5.4057
 log10_ef_pred = a * scores + b
 
-# Calculate R² and RMSE
+
 r2 = r2_score(log10_ef_true, log10_ef_pred)
 rmse = np.sqrt(np.mean((log10_ef_true - log10_ef_pred)**2))
 
-# 95% Prediction Interval (approximate)
+
 pi_width = 2 * rmse
 
 # Print numerical results
@@ -27,11 +27,11 @@ print(f"R² = {r2:.4f}")
 print(f"RMSE = {rmse:.4f} log10 units")
 print(f"95% Prediction Interval = ±{pi_width:.4f} log10 units")
 
-# Convert to EF fold-change factor
+
 ef_factor = 10 ** pi_width
 print(f"Equivalent to EF multiplied/divided by {ef_factor:.1f} fold")
 
-# ========== 3. Plotting ==========
+
 plt.figure(figsize=(8, 6))
 plt.scatter(log10_ef_true, log10_ef_pred, color='blue', s=100, label='Anchor samples')
 

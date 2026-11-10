@@ -12,7 +12,7 @@ import glob
 import numpy as np
 from PIL import Image
 
-# Optional: try to import tqdm for progress bar
+
 try:
     from tqdm import tqdm
 except ImportError:
@@ -38,7 +38,7 @@ def convert_to_jpg(input_dir, output_dir=None, quality=95, remove_original=False
     else:
         os.makedirs(output_dir, exist_ok=True)
     
-    # Supported image formats (excluding jpg)
+
     image_extensions = {
         '.png': 'PNG',
         '.bmp': 'BMP',
@@ -57,62 +57,60 @@ def convert_to_jpg(input_dir, output_dir=None, quality=95, remove_original=False
     print(f"Input directory: {input_dir}")
     print(f"Output directory: {output_dir}")
     
-    # Iterate over all supported formats
+
     for ext, format_name in image_extensions.items():
         for img_path in glob.glob(os.path.join(input_dir, f"*{ext}")):
             try:
                 img = None
                 
-                # Method 1: Read with cv2
+
                 img = cv2.imread(img_path)
                 
-                # Method 2: If cv2 fails, use PIL
+
                 if img is None:
                     pil_img = Image.open(img_path)
                     img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
                 
                 if img is None:
-                    print(f"❌ Cannot read: {os.path.basename(img_path)}")
+                    print(f"Cannot read: {os.path.basename(img_path)}")
                     failed_count += 1
                     continue
-                
-                # Check and handle channels
+     
                 if len(img.shape) == 2:  # Grayscale
                     img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
                 elif img.shape[2] == 4:  # RGBA
                     img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGR)
                 
-                # Generate output path
                 filename = os.path.basename(img_path)
                 name = os.path.splitext(filename)[0]
                 output_path = os.path.join(output_dir, f"{name}.jpg")
                 
-                # Save as JPG
+
                 success = cv2.imwrite(output_path, img, [cv2.IMWRITE_JPEG_QUALITY, quality])
                 
                 if success:
                     converted_count += 1
                     if remove_original and output_dir == input_dir:
                         os.remove(img_path)
-                        print(f"✅ Converted and removed original: {filename} -> {name}.jpg")
+                        print(f"Converted and removed original: {filename} -> {name}.jpg")
                     else:
-                        print(f"✅ Converted: {filename} -> {name}.jpg")
+                        print(f"Converted: {filename} -> {name}.jpg")
                 else:
-                    print(f"❌ Save failed: {filename}")
+                    print(f"Save failed: {filename}")
                     failed_count += 1
                     
             except Exception as e:
-                print(f"❌ Conversion failed {os.path.basename(img_path)}: {e}")
+                print(f"Conversion failed {os.path.basename(img_path)}: {e}")
                 failed_count += 1
     
     # Statistics
     print(f"\nConversion complete!")
-    print(f"✅ Success: {converted_count}")
-    print(f"❌ Failed: {failed_count}")
+    print(f"Success: {converted_count}")
+    print(f"Failed: {failed_count}")
     
-    # Check converted jpg files
+
     jpg_files = glob.glob(os.path.join(output_dir, "*.jpg"))
-    print(f"📊 Total JPG images in directory: {len(jpg_files)}")
+    print(f"Total JPG images in directory: {len(jpg_files)}")
     
     return converted_count, failed_count
 
@@ -131,7 +129,7 @@ def check_image_formats(image_dir, show_details=True):
     unique_exts = set(all_extensions)
     format_stats = {}
     
-    print(f"\n📁 Folder: {image_dir}")
+    print(f"\nFolder: {image_dir}")
     print(f"Total images: {len(all_extensions)}")
     print("\nFormat distribution:")
     
@@ -214,8 +212,8 @@ def verify_images(image_dir, required_size=(512, 512)):
                 issues.append(f"{os.path.basename(img_path)}: {str(e)}")
     
     print(f"\nImage verification results:")
-    print(f"✅ Valid: {valid}")
-    print(f"❌ Invalid: {invalid}")
+    print(f"Valid: {valid}")
+    print(f"Invalid: {invalid}")
     if issues and len(issues) <= 10:
         print("Issues list:")
         for issue in issues:
@@ -227,20 +225,19 @@ def verify_images(image_dir, required_size=(512, 512)):
 
 
 if __name__ == '__main__':
-    # ========== Set paths (Updated to sample_data for GitHub) ==========
-    # You can change these to your actual folders when using locally
+
     input_dir = './sample_data/contrastive_data/images'
     output_dir = './sample_data/contrastive_data/processed_jpg'
     
-    # Create output directory
+
     os.makedirs(output_dir, exist_ok=True)
     
-    # ========== 1. Check image formats ==========
+
     print("1. Checking image formats...")
     check_image_formats(input_dir, show_details=True)
     
-    # ========== 2. Convert image formats ==========
+
     print("\n2. Converting image formats to JPG...")
     convert_to_jpg(input_dir, output_dir, quality=95, remove_original=False)
     
-    print("\n✅ All operations completed!")
+    print("\nAll operations completed!")

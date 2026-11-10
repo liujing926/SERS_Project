@@ -26,7 +26,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Read Excel file
 df = pd.read_excel(excel_path)
-print(f"✅ Successfully read Excel file, total {len(df)} records.")
+
 
 # Iterate through each image
 for idx, row in df.iterrows():
@@ -35,12 +35,11 @@ for idx, row in df.iterrows():
     
     # Calculate scale factor
     if current_nm_per_px <= 0:
-        print(f"⚠️ Skipped {img_name}: Invalid nm/pixel ({current_nm_per_px})")
         continue
         
     scale_factor = current_nm_per_px / target_nm_per_px
     
-    # 🔥 Smart extension check: support jpg, jpeg, png, tif
+
     base_path = os.path.join(image_dir, str(img_name))
     img_path = None
     for ext in ['.jpg', '.jpeg', '.png', '.tif', '.tiff']:
@@ -49,7 +48,6 @@ for idx, row in df.iterrows():
             break
             
     if not img_path:
-        print(f"❌ Error: Image {img_name} not found with any standard extension in {image_dir}")
         continue
     
     # Open and resize image
@@ -68,6 +66,5 @@ for idx, row in df.iterrows():
     new_img_path = os.path.join(output_dir, new_img_name)
     img_resized.save(new_img_path, format='JPEG', quality=100) # Use high quality
     
-    print(f"✅ Processed: {img_name} ({current_nm_per_px:.3f} nm/px) -> {new_img_name} ({target_nm_per_px} nm/px), Scale factor: {scale_factor:.2f}")
 
-print("\n🎉 All images processed successfully!")
+

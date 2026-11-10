@@ -134,12 +134,11 @@ def visualize_feature_space(model, dataloader, epoch, device, save_dir='./experi
         return 0.0
 
     
-    perplexity_val = min(10, len(features) - 1) # 动态调整 perplexity
+    perplexity_val = min(10, len(features) - 1) 
     tsne = TSNE(n_components=2, random_state=42, perplexity=perplexity_val)
     features_2d = tsne.fit_transform(features)
 
-    tsne = TSNE(n_components=2, random_state=42, perplexity=10)
-    features_2d = tsne.fit_transform(features)
+
     
     # Plotting
     colors = {1: 'blue', 2: 'green', 3: 'red'}

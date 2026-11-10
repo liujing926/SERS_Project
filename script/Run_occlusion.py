@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from models import ContrastiveLearn
 from models.backbone import ResNetBackbone
 
-# ==================== RankingModel (Consistent with training) ====================
+# RankingModel 
 class RankingModel(nn.Module):
     def __init__(self, input_dim=512, hidden_dim=256):
         super().__init__()
@@ -31,7 +31,7 @@ class RankingModel(nn.Module):
     def forward(self, x):
         return self.net(x).squeeze()
 
-# ==================== Combined Model ====================
+#  Combined Model 
 class BackbonePlusRanking(nn.Module):
     def __init__(self, backbone, ranking_model):
         super().__init__()
@@ -43,7 +43,7 @@ class BackbonePlusRanking(nn.Module):
         score = self.ranking_model(feat)
         return score
 
-# ==================== Occlusion Core Function ====================
+#  Occlusion Core Function 
 def occlusion_sensitivity(model, img_tensor, patch_size=32, stride=16,
                           baseline_value=0.0, device='cpu'):
     """
@@ -97,7 +97,7 @@ def occlusion_sensitivity(model, img_tensor, patch_size=32, stride=16,
 
     return sensitivity, base_score
 
-# ==================== Overlay and Save ====================
+#  Overlay and Save
 def overlay_and_save(img_path, sensitivity, save_path, alpha=0.5):
     img = cv2.imread(img_path)
     h, w = img.shape[:2]
@@ -108,15 +108,15 @@ def overlay_and_save(img_path, sensitivity, save_path, alpha=0.5):
 
     overlay = cv2.addWeighted(img, 1 - alpha, sens_color, alpha, 0)
     cv2.imwrite(save_path, overlay)
-    print(f"✅ Saved: {save_path}")
+    print(f" Saved: {save_path}")
 
-# ==================== Main Process ====================
+# Main Process 
 def main():
-    # 🔥 Updated to relative paths
+  
     contrastive_ckpt = './experiments/checkpoints/contrastive_epoch50.pth'
     ranking_ckpt = './experiments/checkpoints/best_ranking_model.pth'
 
-    # 🔥 Use a sample image for testing
+
     img_path = './sample_data/ranking_data/images/1_1.jpg'
 
     save_dir = './experiments/occlusion'
@@ -124,7 +124,7 @@ def main():
 
     device = torch.device('cpu')
 
-    # ---------- Load Models ----------
+    #  Load Models 
     backbone = ResNetBackbone.get_backbone('resnet18')
     projection = ContrastiveLearn.ContrastiveHead(in_features=512, out_features=128)
     supcon_model = ContrastiveLearn.SupConModel(backbone, projection)
@@ -138,7 +138,7 @@ def main():
 
     combined = BackbonePlusRanking(backbone, ranking_model).to(device).eval()
 
-    # ---------- Preprocessing ----------
+    #  Preprocessing
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -147,13 +147,13 @@ def main():
     ])
 
     if not os.path.exists(img_path):
-        print(f"❌ Error: Image not found at {img_path}")
+        print(f" Error: Image not found at {img_path}")
         return
 
     img = Image.open(img_path).convert('RGB')
     img_tensor = transform(img).unsqueeze(0).to(device)
 
-    # ---------- Run Occlusion ----------
+    # Run Occlusion 
     print("Starting Occlusion analysis...")
     sensitivity, base_score = occlusion_sensitivity(
         model=combined,
@@ -165,12 +165,12 @@ def main():
     )
     print(f"Base ranking score: {base_score:.4f}")
 
-    # ---------- Save Overlay ----------
+    #  Save Overlay 
     base_name = os.path.splitext(os.path.basename(img_path))[0]
     save_path = os.path.join(save_dir, f'{base_name}_occlusion.png')
     overlay_and_save(img_path, sensitivity, save_path)
 
-    # ---------- Save Standalone Heatmap ----------
+    #  Save Standalone Heatmap 
     plt.figure(figsize=(6, 5))
     plt.imshow(sensitivity, cmap='jet')
     plt.colorbar(label='Score drop')
@@ -180,7 +180,7 @@ def main():
     plt.savefig(os.path.join(save_dir, f'{base_name}_occlusion_heat.png'), dpi=300)
     plt.close()
 
-    print("\n✅ Occlusion completed")
+    print("\n Occlusion completed")
 
 if __name__ == '__main__':
     main()

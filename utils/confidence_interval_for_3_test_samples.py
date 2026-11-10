@@ -58,7 +58,7 @@ def calculate_clopper_pearson_ci(k, n):
 
 
 if __name__ == '__main__':
-    # ========== 1. Bootstrap Confidence Interval ==========
+
     print("--- Bootstrap 95% CI ---")
     
     # Test data
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     print(f"Accuracy: {mean_acc:.3f} (95% CI: {ci_lower:.3f} - {ci_upper:.3f})")
 
-    # ========== 2. Clopper-Pearson Confidence Interval ==========
+    # Clopper-Pearson Confidence Interval
     print("\n--- Clopper-Pearson 95% CI ---")
     
     # Validation results for 8 pairs (e.g., k=7 correct out of n=8)

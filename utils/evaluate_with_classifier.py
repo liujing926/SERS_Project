@@ -22,7 +22,7 @@ def evaluate_with_classifier(model, val_loader, device, epoch, logger=None):
         for img1, img2, labels in val_loader:  # Only take the first view
             img1 = img1.to(device)
             labels = labels.to(device)
-            # ⚠️ Key: Use backbone to extract features, not the projection head
+ 
             features = model.backbone(img1)  # [batch, 512]
             all_features.append(features.cpu().numpy())
             all_labels.extend(labels.numpy()) 
@@ -37,17 +37,17 @@ def evaluate_with_classifier(model, val_loader, device, epoch, logger=None):
     knn = KNeighborsClassifier(n_neighbors=5, weights='distance')  
     knn.fit(features, labels)
     
-    # ========== Calculate training accuracy ==========
+    #  Calculate training accuracy
     train_pred = knn.predict(features)
     train_acc = accuracy_score(labels, train_pred)
     print(f"Training accuracy: {train_acc:.4f}")
-    # ================================================
+  
 
-    # Predict on the validation set (Note: it's the same features here, so evaluating KNN fit)
+   
     pred_labels = knn.predict(features)
     accuracy = accuracy_score(labels, pred_labels)
     
-    print(f"\n📊 Epoch {epoch+1} Validation accuracy: {accuracy:.4f}")
+    print(f"\nEpoch {epoch+1} Validation accuracy: {accuracy:.4f}")
     
     # Print accuracy for each class
     for cls in [1, 2, 3]:

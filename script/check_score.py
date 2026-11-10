@@ -15,7 +15,7 @@ from models import ContrastiveLearn
 from models.backbone import ResNetBackbone
 
 
-# ==================== RankingModel Definition (Consistent with training) ====================
+# RankingModel Definition (Consistent with training) 
 class RankingModel(nn.Module):
     def __init__(self, input_dim=512, hidden_dim=256):
         super().__init__()
@@ -30,7 +30,7 @@ class RankingModel(nn.Module):
         return self.net(x).squeeze()
 
 
-# ==================== Combined Model ====================
+#  Combined Model 
 class BackbonePlusRanking(nn.Module):
     def __init__(self, backbone, ranking_model):
         super().__init__()
@@ -44,16 +44,16 @@ class BackbonePlusRanking(nn.Module):
 
 
 def main():
-    # 🔥 Update these paths to point to your actual checkpoints and test image
+
     contrastive_ckpt = './experiments/checkpoints/contrastive_epoch50.pth'
     ranking_ckpt = './experiments/checkpoints/best_ranking_model.pth'
 
-    # 🔥 Change this to the image you want to test
+
     img_path = './sample_data/ranking_data/images/1_1.jpg'
 
     device = torch.device('cpu')
 
-    # ---------- 1. Load Contrastive Learning Model ----------
+    # 1. Load Contrastive Learning Model 
     backbone = ResNetBackbone.get_backbone('resnet18')
     projection = ContrastiveLearn.ContrastiveHead(in_features=512, out_features=128)
     supcon_model = ContrastiveLearn.SupConModel(backbone, projection)
@@ -66,17 +66,17 @@ def main():
     backbone = supcon_model.backbone
     backbone.eval()
 
-    # ---------- 2. Load Ranking Model ----------
+    #2. Load Ranking Model 
     ranking_model = RankingModel(input_dim=512)
     ranking_model.load_state_dict(torch.load(ranking_ckpt, map_location=device))
     ranking_model = ranking_model.to(device)
     ranking_model.eval()
 
-    # ---------- 3. Combine Models ----------
+    # 3. Combine Models 
     combined = BackbonePlusRanking(backbone, ranking_model).to(device)
     combined.eval()
 
-    # ---------- 4. Preprocessing ----------
+    #4. Preprocessing 
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -84,9 +84,9 @@ def main():
                              std=[0.229, 0.224, 0.225])
     ])
 
-    # ---------- 5. Forward Pass and Print Score ----------
+    #  5. Forward Pass and Print Score
     if not os.path.exists(img_path):
-        print(f"❌ Error: Test image not found at {img_path}")
+        print(f" Error: Test image not found at {img_path}")
         return
 
     img = Image.open(img_path).convert('RGB')

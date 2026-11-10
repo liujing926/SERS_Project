@@ -12,7 +12,6 @@ class ResNetBackbone(nn.Module):
     def __init__(self, model_name='resnet18', pretrained=True):
         super().__init__()
         if model_name == 'resnet18':
-            # Use weights parameter instead of deprecated pretrained=True
             weights = ResNet18_Weights.DEFAULT if pretrained else None
             resnet = models.resnet18(weights=weights)
         elif model_name == 'resnet50':

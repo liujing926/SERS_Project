@@ -23,7 +23,7 @@ from utils.helpers import set_seed
 
 
 def main():
-    # 🔥 Fixed: Added missing device definition
+
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Load configuration
@@ -75,7 +75,7 @@ def main():
     model = model.to(device)
     model.eval()
 
-    # ========== Manually extract features ==========
+    # Manually extract features 
     all_features = []
     all_labels = []
 
@@ -91,7 +91,7 @@ def main():
     labels = np.array(all_labels)
 
     print(f"Feature shape: {features.shape}, Label shape: {labels.shape}")
-    # =================================================
+   
 
     # t-SNE dimensionality reduction
     tsne = TSNE(n_components=2, random_state=42, perplexity=10)
@@ -117,7 +117,7 @@ def main():
         score = silhouette_score(features_2d, labels)
         print(f"Silhouette Score before training: {score:.4f}")
 
-    # ========== Export t-SNE coordinates to CSV ==========
+    #  Export t-SNE coordinates to CSV 
     df_tsne = pd.DataFrame({
         'x': features_2d[:, 0],
         'y': features_2d[:, 1],
@@ -126,7 +126,7 @@ def main():
     
     csv_path = './experiments/tsne/tsne_epoch_0_random.csv'
     df_tsne.to_csv(csv_path, index=False)
-    print(f"✅ t-SNE coordinates saved to: {csv_path}")
+    print(f"t-SNE coordinates saved to: {csv_path}")
 
 
 if __name__ == '__main__':

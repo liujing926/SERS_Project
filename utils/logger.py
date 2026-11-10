@@ -11,7 +11,6 @@ def setup_logger(log_dir='./experiments/logs'):
     """Set up the logger."""
     os.makedirs(log_dir, exist_ok=True)
 
-    # 🔥 Fixed typo: datatime -> datetime
     log_filename = datetime.now().strftime('%Y%m%d_%H%M%S.log')
     log_path = os.path.join(log_dir, log_filename)
 
